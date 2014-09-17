@@ -73,7 +73,7 @@ def bit_flip(x):
     x >>= 1
   return r
 
-for x in xrange(256):
+for x in xrange(128):
     bitmap = fontmap.get(x, [])
     sys.stdout.write("  /* code point %x */\n" % x)
     sys.stdout.write("  {\n")

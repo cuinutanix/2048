@@ -52,7 +52,6 @@
 #include "assets/container.h"
 
 #include "assets/title.h"
-#include "assets/login_logo.h"
 
 static const u16 *const tiles[] = {
   tile_0_image,
@@ -151,7 +150,6 @@ void game_reset()
   display_image(BOARD_OFFSET_Y, BOARD_OFFSET_X, container_image);
   display_image(BOARD_OFFSET_Y + 60,
                 BOARD_OFFSET_X + BOARD_WIDTH + 30, title_image);
-  display_image(500, 227, login_logo_image);
 
   for (y = 0; y < DIM; y++) {
     for (x = 0; x < DIM; x++) {
@@ -165,10 +163,6 @@ void game_reset()
   moves = 0;
   score = 0;
   moved = 1;
-
-  set_cursor(29, 0);
-  print("      Copyright \xa9 2014 Nutanix, Inc."
-	"  2048 was created by Gabriele Cirulli.");
 }
 
 

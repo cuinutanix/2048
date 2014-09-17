@@ -30,6 +30,11 @@
 #include "console.h"
 #include "fb.h"
 #include "2048.h"
+#include "image.h"
+
+#ifdef HAS_NUTANIX_LOGO
+#include "assets/login_logo.h"
+#endif
 
 void timer_interrupt()
 {
@@ -130,6 +135,14 @@ int main()
   set_color(0x0f);
   print("Operating system not found. Please install an operating system, "
         "or play 2048.");
+
+#ifdef HAS_NUTANIX_LOGO
+  display_image(500, 227, login_logo_image);
+#endif
+
+  set_cursor(29, 0);
+  print("2048 was created by Gabriele Cirulli. "
+	"http://gabrielecirulli.github.io/2048/");
 
   game_reset();
 

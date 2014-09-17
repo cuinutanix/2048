@@ -25,16 +25,20 @@ IMAGE_FILES := $(addprefix assets/, \
   tile_65536.h \
   tile_131072.h \
   container.h \
-  title.h \
-  login_logo.h)
+  title.h)
 
-$(IMAGE_FILES) : %.h : %.png
+ifneq ($(WITH_NUTANIX_LOGO),)
+main.o: assets/login_logo.h
+CFLAGS += -DHAS_NUTANIX_LOGO
+endif
+
+assets/%.h : assets/%.png
 	./png_to_c.py $^ $@.tmp >/dev/null
 	mv $@.tmp $@
 
 FONT_FILES = assets/font10x20.h
 
-$(FONT_FILES) : assets/font%.h : assets/%.bdf
+assets/font%.h : assets/%.bdf
 	./bdf_to_c.py < $^ > $@.tmp
 	mv $@.tmp $@
 
