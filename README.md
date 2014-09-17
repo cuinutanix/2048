@@ -3,7 +3,7 @@
 =======
 A tiny OS that runs a graphical version of the game 2048. This OS is run inside
 virtual machines in lieu of showing "Operating system not found" message
-on the Nutanix virtualization plation.
+on the Nutanix virtualization platform.
 
 It is released by Nutanix under permissive open source license for educational
 purposes. It demonstrates the bare minimum required for booting a x86 processor
@@ -11,9 +11,9 @@ from real mode into protected mode, while initializing basic devices like
 framebuffer, keyboard, and a timer.
 
 Build and run:
-0. Build tools needed: make, gcc, python, python-png
-1. run: make
-2. dd boot.bin into the first sectors of a (virtual) hdd, then boot from it.
+1. Build tools needed: make, gcc, python, python-png
+2. run: make
+3. dd boot.bin into the first sectors of a (virtual) hdd, then boot from it.
 
 Future work:
 1. Make it bootable from floppy disk as well.
