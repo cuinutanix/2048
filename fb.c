@@ -10,8 +10,6 @@
 #include "fb.h"
 #include "assets/font10x20.h"
 
-#include "realmode.h"
-
 struct VbeInfoBlock {
   char VbeSignature[4];
   u16  VbeVersion;
@@ -21,12 +19,7 @@ struct VbeInfoBlock {
   u16  TotalMemory;
 };
 
-union {
-  struct VbeInfoBlock info;
-  u8 bytes[512];
-} VBE_INFO LOW_SEGMENT = {
-  .bytes = "VBE2"
-};
+extern const struct VbeInfoBlock VBE_INFO;
 
 struct ModeInfoBlock {
   u16 attributes;
@@ -53,16 +46,12 @@ struct ModeInfoBlock {
   u16 reserved2;
 };
 
-union {
-  struct ModeInfoBlock info;
-  u8 bytes[256];
-} VBE_MODE_INFO LOW_SEGMENT;
+extern const struct ModeInfoBlock VBE_MODE_INFO;
+extern const u8 VBE_SUCCESS;
 
-u8 VBE_SUCCESS LOW_SEGMENT;
-
-#define FRAMEBUFFER ((volatile u16 *)VBE_MODE_INFO.info.physbase)
-#define X_RES       VBE_MODE_INFO.info.Xres
-#define Y_RES       VBE_MODE_INFO.info.Yres
+#define FRAMEBUFFER ((volatile u16 *)VBE_MODE_INFO.physbase)
+#define X_RES       VBE_MODE_INFO.Xres
+#define Y_RES       VBE_MODE_INFO.Yres
 
 inline void set_pixel(int y, int x, u16 color)
 {
@@ -95,7 +84,7 @@ void fb_init()
     while(1) { asm("hlt"); }
   }
 
-  if (VBE_MODE_INFO.info.bpp != 16) {
+  if (VBE_MODE_INFO.bpp != 16) {
     print("VESA BIOS error: not 16-bit depth\n");
     while(1) { asm("hlt"); }
   }

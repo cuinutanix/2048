@@ -29,7 +29,6 @@
 // 3. Jump into 32-bit C code.
 
 .code16
-.section .text.mbr_begin
 .globl _entry
 _entry:
         cli
@@ -65,6 +64,7 @@ _entry:
         // Attempt to switch to VBE mode 114h (800x600x16bit)
         mov $0x4f00, %ax
         mov $VBE_INFO, %edi
+        movl $('V' | ('B' << 8) | ('E' << 16) | ('2' << 24)), (%edi)
         int $0x10
         cmp $0x4f, %ax
         jne 2f
@@ -122,11 +122,13 @@ _code32:
         call main
 
         // FREEZE!
+1:
         cli
         hlt
+        jmp 1b
 
-        // BIOS MBR signature, last 2 bytes of first sector.
-.section .text.mbr_end
-_mbr_sig:
+2:
+        .space (510 - (2b - _entry)), 0x00
+
         .byte 0x55
         .byte 0xaa

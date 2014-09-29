@@ -5,13 +5,11 @@ TARGET(elf32-i386)
 SECTIONS
 {
   . = 0x7c00;
-  .text.mbr_begin : { *(.text.mbr_begin) }
-  . = 0x7dfe;
-  .text.mbr_end  : { *(.text.mbr_end) }
+  .text.realmode : { mbr.o(.text) realmode.o(.text) }
+  .data.realmode : { realmode.o(.rodata*) realmode.o(.data) realmode.o(.bss) }
   .text : { *(.text) }
-  .data : { *(.data.low) *(.rodata*) *(.data) }
-  . = ALIGN(16);
+  .data : { *(.rodata*) *(.data) }
   _BSS_START = .;
-  .bss : { *(.bss) }
+  .bss : { *(.bss) *(COMMON) }
   _BSS_END = .;
 }

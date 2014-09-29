@@ -31,13 +31,16 @@
 asm(".code16gcc\n");
 
 #include "dt.h"
-#include "realmode.h"
 
-gdt_entry GDT[4]   LOW_SEGMENT;
-idt_entry IDT[256] LOW_SEGMENT;
+gdt_entry GDT[4] = {};
+idt_entry IDT[256] = {};
 
-dtr IDTR LOW_SEGMENT = { .limit = (sizeof IDT) - 1, .base = IDT };
-dtr GDTR LOW_SEGMENT = { .limit = (sizeof GDT) - 1, .base = GDT };
+dtr IDTR = { .limit = (sizeof IDT) - 1, .base = IDT };
+dtr GDTR = { .limit = (sizeof GDT) - 1, .base = GDT };
+
+char VBE_INFO[512] = {};
+char VBE_MODE_INFO[256] = {};
+u8   VBE_SUCCESS = 0;
 
 extern void irq0();
 extern void irq1();
