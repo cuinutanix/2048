@@ -38,25 +38,63 @@ _entry:
         mov %ax, %es
         mov %ax, %ss
         mov $_entry, %sp
+        mov %sp, %bp
 
         ljmp $0, $1f // mov $0, %cs
 1:
         // Read disk
         sti
 
-.macro READ_DISK lba count
-        mov $(\lba/63), %dh
-        mov $(_entry + \lba*512), %ebx
-        shr $4, %ebx
-        mov %bx, %es
-        xor %ebx, %ebx
-        mov $(0x200 + \count), %ax
-        mov $((\lba % 63)+1), %cx
+        test $0x80, %dl
+        jz 1f // floppy
+        // HDD
+        pushw $63  // max sector
+        pushw $254 // max head
+        jmp 2f
+1:
+        pushw $18  // max sector
+        pushw $1   // max head
+
+2:
+        xor %edi, %edi
+
+        mov $2, %cx // cylinder = 0, sector = 2
+        mov $0, %dh // head = 0
+
+        mov $(_entry + 512), %eax
+        shr $4, %eax
+        mov %ax, %es
+
+2:
+        xor %bx, %bx    // es:bx = start address
+        mov $0x201, %ax
         int $0x13
-.endm
-        READ_DISK   1, 62
-        READ_DISK  63, 63
-        READ_DISK 126, 63
+
+        test %al, %al
+1:      jz 1b
+
+        add %al, %cl
+        cmp -2(%bp), %cl
+        jbe 1f
+
+        mov $1, %cl
+        inc %dh
+        cmp -4(%bp), %dh
+        jbe 1f
+
+        mov $0, %dh
+        inc %ch
+1:
+        movzbw %al, %ax
+        mov %es, %bx
+        shl $5, %ax
+        add %bx, %ax
+        mov %ax, %es
+
+        mov $(_BSS_START), %ebx
+        shr $4, %ebx
+        cmp %ax, %bx
+        ja 2b
 
         xor %ax, %ax
         mov %ax, %es
@@ -128,7 +166,6 @@ _code32:
         jmp 1b
 
 2:
-        .space (510 - (2b - _entry)), 0x00
-
+        .space (510 - (2b - _entry)), 0x90
         .byte 0x55
         .byte 0xaa
