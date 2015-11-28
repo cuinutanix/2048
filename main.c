@@ -133,8 +133,9 @@ int main()
   fb_init();
 
   set_color(0x0f);
-  print("Operating system not found. Please install an operating system, "
-        "or play 2048.");
+  extern const char ERROR_MESSAGE[];
+  print(ERROR_MESSAGE);
+  print(" Please install an operating system, or play 2048.");
 
 #ifdef HAS_NUTANIX_LOGO
   display_image(500, 227, login_logo_image);

@@ -2,8 +2,9 @@ CFLAGS=-m32 -march=i686 -Os -ffreestanding -nostdinc -Wall -Werror
 ASFLAGS=-m32
 
 .PHONY: clean all
+.SECONDARY:
 
-all: boot.bin
+all: boot.bin oprom.rom
 
 IMAGE_FILES := $(addprefix assets/, \
   tile_0.h \
@@ -46,11 +47,22 @@ fb.o: $(FONT_FILES)
 
 2048.o: $(IMAGE_FILES)
 
-boot.elf: mbr.o main.o realmode.o irq.o console.o fb.o 2048.o image.o
+C_OBJS := main.o realmode.o irq.o console.o fb.o 2048.o image.o
+
+%.elf: start.%.o $(C_OBJS)
 	ld -m elf_i386 -T linker.lds -o $@ $^
+
+start.boot.o: start.S
+	$(CC) $(ASFLAGS) -DBOOT_MBR=1 -c -o $@ $^
+
+start.oprom.o: start.S
+	$(CC) $(ASFLAGS) -DBOOT_OPROM=1 -c -o $@ $^
 
 %.bin: %.elf
 	objcopy -O binary $^ $@
 
+%.rom: %.bin
+	python ./fix_rom.py $^ $@
+
 clean:
-	rm -rf *.bin *.elf *.o assets/*.h
+	rm -rf *.bin *.elf *.o assets/*.h *.rom

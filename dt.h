@@ -60,7 +60,7 @@ typedef struct {
 
 typedef struct {
   u16 limit;
-  void *base;
+  u32 base;
 } __attribute__ ((__packed__)) dtr;
 
 #endif

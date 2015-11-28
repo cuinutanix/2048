@@ -74,10 +74,11 @@ void set_cursor(int row, int col)
 
 static void draw_char(char c, u8 color, int row, int col)
 {
+  extern u32 SEGMENT_BASE_ADDRESS;
   struct {
     char ch;
     u8 color;
-  } *const CONSOLE = (void *)0xB8000;
+  } *const CONSOLE = (void *)(0xB8000UL - SEGMENT_BASE_ADDRESS);
   CONSOLE[row*80 + col].ch = c;
   CONSOLE[row*80 + col].color = color;
 }

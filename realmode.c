@@ -35,8 +35,10 @@ asm(".code16gcc\n");
 gdt_entry GDT[4] = {};
 idt_entry IDT[256] = {};
 
-dtr IDTR = { .limit = (sizeof IDT) - 1, .base = IDT };
-dtr GDTR = { .limit = (sizeof GDT) - 1, .base = GDT };
+dtr IDTR = {};
+dtr GDTR = {};
+
+u32 SEGMENT_BASE_ADDRESS = 0;
 
 char VBE_INFO[512] = {};
 char VBE_MODE_INFO[256] = {};
@@ -49,6 +51,9 @@ void setup_descriptors()
 {
   GDT[1].seg_limit_lo = 0xffff;
   GDT[1].seg_limit_hi = 0xf;
+  GDT[1].base_lo = SEGMENT_BASE_ADDRESS;
+  GDT[1].base_mid = SEGMENT_BASE_ADDRESS >> 16;
+  GDT[1].base_hi = SEGMENT_BASE_ADDRESS >> 24;
   GDT[1].type = SEG_TYPE_CODE;
   GDT[1].s = 1;
   GDT[1].p = 1;
@@ -57,6 +62,9 @@ void setup_descriptors()
 
   GDT[2].seg_limit_lo = 0xffff;
   GDT[2].seg_limit_hi = 0xf;
+  GDT[2].base_lo = SEGMENT_BASE_ADDRESS;
+  GDT[2].base_mid = SEGMENT_BASE_ADDRESS >> 16;
+  GDT[2].base_hi = SEGMENT_BASE_ADDRESS >> 24;
   GDT[2].type = SEG_TYPE_CODE;
   GDT[2].s = 1;
   GDT[2].p = 1;
@@ -65,6 +73,9 @@ void setup_descriptors()
 
   GDT[3].seg_limit_lo = 0xffff;
   GDT[3].seg_limit_hi = 0xf;
+  GDT[3].base_lo = SEGMENT_BASE_ADDRESS;
+  GDT[3].base_mid = SEGMENT_BASE_ADDRESS >> 16;
+  GDT[3].base_hi = SEGMENT_BASE_ADDRESS >> 24;
   GDT[3].type = SEG_TYPE_DATA;
   GDT[3].s = 1;
   GDT[3].p = 1;
@@ -82,4 +93,9 @@ void setup_descriptors()
   IDT[0x31].segment = 0x10;
   IDT[0x31].type = INTERRUPT_GATE;
   IDT[0x31].p = 1;
+
+  GDTR.base = (u32)GDT + SEGMENT_BASE_ADDRESS;
+  GDTR.limit = (sizeof GDT) - 1;
+  IDTR.base = (u32)IDT + SEGMENT_BASE_ADDRESS;
+  IDTR.limit = (sizeof IDT) - 1;
 }

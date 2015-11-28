@@ -19,7 +19,7 @@ struct VbeInfoBlock {
   u16  TotalMemory;
 };
 
-extern const struct VbeInfoBlock VBE_INFO;
+extern struct VbeInfoBlock VBE_INFO;
 
 struct ModeInfoBlock {
   u16 attributes;
@@ -46,8 +46,8 @@ struct ModeInfoBlock {
   u16 reserved2;
 };
 
-extern const struct ModeInfoBlock VBE_MODE_INFO;
-extern const u8 VBE_SUCCESS;
+extern struct ModeInfoBlock VBE_MODE_INFO;
+extern u8 VBE_SUCCESS;
 
 #define FRAMEBUFFER ((volatile u16 *)VBE_MODE_INFO.physbase)
 #define X_RES       VBE_MODE_INFO.Xres
@@ -77,6 +77,7 @@ void fb_init()
 {
   int i;
   u16 color = rgb24to16(VGA_PALETTE[0]);
+  extern u32 SEGMENT_BASE_ADDRESS;
 
   if (!VBE_SUCCESS) {
     print("Could not initialize VESA BIOS extensions for framebuffer "
@@ -88,6 +89,8 @@ void fb_init()
     print("VESA BIOS error: not 16-bit depth\n");
     while(1) { asm("hlt"); }
   }
+
+  VBE_MODE_INFO.physbase -= SEGMENT_BASE_ADDRESS;
 
   for (i = 0; i < X_RES * Y_RES; i++) {
     FRAMEBUFFER[i] = color;

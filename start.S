@@ -23,25 +23,40 @@
  *
  */
 
-// Assembly for MBR or first 512 bytes of this program. Responsible for:
-// 1. Loading the rest of the program into memory.
-// 2. Setting up descriptors to enter 32-bit protected mode.
-// 3. Jump into 32-bit C code.
+_start:
+#ifdef BOOT_OPROM
+#include "oprom_header.S"
+#endif
 
 .code16
-.globl _entry
-_entry:
         cli
-        // Load 0 into segment registers to use linear address.
-        xor %ax, %ax
+        cld
+        // Stack grows down from A0000
+        mov $0x9000, %ax
+        mov %ax, %ss
+        xor %esp, %esp
+        mov %esp, %ebp
+
+        // Relocate by adjusting real mode segment.
+        mov %cs, %eax
+        shl $4, %eax
+        xor %ebx, %ebx
+        call 1f
+1:
+        pop %bx
+        add %eax, %ebx
+        sub $1b, %ebx      // %ebx: linear base address
+        mov %ebx, %eax
+        shr $4, %eax
         mov %ax, %ds
         mov %ax, %es
-        mov %ax, %ss
-        mov $_entry, %sp
-        mov %sp, %bp
-
-        ljmp $0, $1f // mov $0, %cs
+        push %ax           // %cs
+        push $1f           // %ip
+        lret
 1:
+
+#ifdef BOOT_MBR
+_read_disk:
         // Read disk
         sti
 
@@ -61,14 +76,16 @@ _entry:
         mov $2, %cx // cylinder = 0, sector = 2
         mov $0, %dh // head = 0
 
-        mov $(_entry + 512), %eax
+        leal (_start + 512)(%ebx), %eax
         shr $4, %eax
         mov %ax, %es
 
 2:
+        push %bx
         xor %bx, %bx    // es:bx = start address
         mov $0x201, %ax
         int $0x13
+        pop %bx
 
         test %al, %al
 1:      jz 1b
@@ -85,48 +102,52 @@ _entry:
         mov $0, %dh
         inc %ch
 1:
+        push %cx
         movzbw %al, %ax
-        mov %es, %bx
+        mov %es, %cx
         shl $5, %ax
-        add %bx, %ax
+        add %cx, %ax
         mov %ax, %es
-
-        mov $(_BSS_START), %ebx
-        shr $4, %ebx
-        cmp %ax, %bx
+        leal _edata(%ebx), %ecx
+        shr $4, %ecx
+        cmp %ax, %cx
+        pop %cx
         ja 2b
 
-        xor %ax, %ax
+        mov %ds, %ax
         mov %ax, %es
+#endif // if BOOT_MBR
 
+_vbe_init:
         // Attempt to switch to VBE mode 114h (800x600x16bit)
         mov $0x4f00, %ax
-        mov $VBE_INFO, %edi
-        movl $('V' | ('B' << 8) | ('E' << 16) | ('2' << 24)), (%edi)
+        lea VBE_INFO, %di
+        movl $('V' | ('B' << 8) | ('E' << 16) | ('2' << 24)), (%di)
         int $0x10
         cmp $0x4f, %ax
         jne 2f
 
         mov $0x4f01, %ax
         mov $0x114,  %cx
-        mov $VBE_MODE_INFO, %edi
+        lea VBE_MODE_INFO, %di
         int $0x10
         cmp $0x4f, %ax
         jne 2f
 
         mov $0x4f02, %ax
+        push %bx
         mov $0x4114, %bx
         int $0x10
+        pop %bx
         cmp $0x4f, %ax
         jne 2f
 
         movb $1, VBE_SUCCESS
 
 2:
-        xor %ax, %ax
-        mov %ax, %es
-
+_protmode_init:
         cli
+        mov %ebx, SEGMENT_BASE_ADDRESS
         calll setup_descriptors // .code16gcc for setting up DTs
 
         lgdtl GDTR
@@ -148,13 +169,7 @@ _code32:
 
         mov %eax, %ss
         mov $0xA0000, %esp // Stack grows down from 640K
-
-        // ZERO out BSS
-        xor %eax, %eax
-        mov $_BSS_START, %edi
-        mov $_BSS_END, %ecx
-        sub %edi, %ecx
-        rep stosb
+        sub %ebx, %esp     // Adjust for segment offset
 
         // Call into C code.
         call main
@@ -165,7 +180,19 @@ _code32:
         hlt
         jmp 1b
 
+#ifdef BOOT_MBR
 2:
-        .space (510 - (2b - _entry)), 0x90
+        .space (510 - (2b - _start)), 0x90
         .byte 0x55
         .byte 0xaa
+#endif
+
+.section .rodata
+.global ERROR_MESSAGE
+ERROR_MESSAGE:
+#ifdef BOOT_MBR
+        .string "Operating system not found."
+#endif
+#ifdef BOOT_OPROM
+        .string "Boot device not found."
+#endif
